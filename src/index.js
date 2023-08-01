@@ -5,7 +5,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 
 const app = express();
-const port = process.env.port || 3000
+const port = process.env.port || 3002
 const uri = process.env.MONGODB_URI
 const productRoutes = require("./routes/product")
 const userRoutes = require("./routes/user")
