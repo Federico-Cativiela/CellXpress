@@ -13,7 +13,7 @@ const productSchema = mongoose.Schema({
     type: String,
     required: true,
   },
-  category: {
+  brand: {
     type: String,
     required: true,
   }, 
@@ -25,6 +25,11 @@ const productSchema = mongoose.Schema({
     type: Array,
     required: false,
   },
+  count: {
+    type: Number,
+    default: 0,
+    required: false,
+  }
 });
 productSchema.index({ title: "text" }); // Definir índice de texto en el campo "title"
 
