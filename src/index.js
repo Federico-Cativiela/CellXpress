@@ -15,7 +15,7 @@ app.use(express.json())
 app.use(morgan("dev"));
 app.use(cors({ origin: "http://127.0.0.1:5173" }));
 //routes
-app.use("/users", userRoutes);
+app.use("/", userRoutes);
 app.use('/products', productRoutes)
 
 //app.use("/orders", buyOrderRouter);

@@ -4,7 +4,7 @@ const userSchema = require("../models/user")
 const router = express.Router()
 
 //Ruta para obtener todos los usuarios
-router.get("/users", (req,res)=>{
+router.get("/", (req,res)=>{
     userSchema
     .find()
     .then((data)=>res.json(data))
