@@ -15,7 +15,7 @@ app.use(express.json())
 app.use(morgan("dev"));
 app.use(cors({ origin: "http://127.0.0.1:5173" }));
 //routes
-app.use("/", userRoutes);
+app.use("/users", userRoutes);
 app.use('/products', productRoutes)
 
 //app.use("/orders", buyOrderRouter);
@@ -26,4 +26,4 @@ mongoose.connect(uri)
 .then(()=>console.log("connected to Mongodb Atlas"))
 .catch((error)=>console.error(error))
 
-app.listen(port,()=>  console.log('server is listening in port', port))
+app.listen(port,()=> console.log('server is listening in port', port))
