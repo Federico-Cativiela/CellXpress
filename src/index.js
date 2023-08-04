@@ -13,7 +13,7 @@ const userRoutes = require("./routes/user")
 //middlewares
 app.use(express.json())
 app.use(morgan("dev"));
-app.use(cors({ origin: "http://127.0.0.1:5173" }));
+app.use(cors({ origin: "https://pf-cell-xpress-frontend.vercel.app/" }));
 //routes
 app.use("/", userRoutes);
 app.use('/products', productRoutes)
