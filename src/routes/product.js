@@ -64,7 +64,7 @@ router.get("/brand/:brand", (req, res) => {
 
 // Ruta para crear un nuevo producto
 router.post("/", (req, res) => {
-    const { title, price, description, brand, image, rating ,count} = req.body;
+    const { title, price, description, brand, image, rating , screenSize, cameraInches,ram,isDeactivated,count} = req.body;
 
 // // Validar que se proporcionen todos los campos requeridos
 //     if (!title  !price !rating !description  !brand  !image !count) {
@@ -78,6 +78,10 @@ router.post("/", (req, res) => {
     brand,
     image,
     rating,
+    screenSize,
+    cameraInches,
+    ram,
+    isDeactivated,
     count
   });
 
@@ -94,7 +98,7 @@ router.put("/:id", (req, res) => {
   const productId = req.params.id;
 
   // Obtener los datos actualizados del producto desde el cuerpo de la solicitud
-  const { title, price, description, brand, image, rating, count } = req.body;
+  const { title, price, description, brand, image, rating , screenSize, cameraInches,ram,isDeactivated,count } = req.body;
 
   // Construir el objeto con los campos actualizados
   const updatedProduct = {
@@ -104,6 +108,10 @@ router.put("/:id", (req, res) => {
     brand,
     image,
     rating,
+    screenSize, 
+    cameraInches,
+    ram,
+    isDeactivated,
     count,
   };
   // Actualizar el producto en la base de datos
