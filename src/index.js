@@ -18,7 +18,8 @@ app.use(cors({ origin: "http://localhost:3002" }));
 // agregado por mi 
  
 app.use(cors({ origin: "http://localhost:5173" }));
-//routes
+
+
 app.use("/", userRoutes);
 app.use('/products', productRoutes)
 
@@ -30,4 +31,4 @@ mongoose.connect(uri)
 .then(()=>console.log("connected to Mongodb Atlas"))
 .catch((error)=>console.error(error))
 
-app.listen(port,()=>  console.log('server is listening in port', port))
+app.listen(port,()=> console.log('server is listening in port', port))
