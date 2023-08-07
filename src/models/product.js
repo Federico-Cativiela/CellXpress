@@ -25,6 +25,24 @@ const productSchema = mongoose.Schema({
     type: Array,
     required: false,
   },
+  //isDeactivated,ScreenSize,CameraInches,Ram
+  screenSize: {
+    type: String,
+    required: true,
+  },
+  cameraInches: {
+    type: String,
+    required: true,
+  },
+  ram: {
+    type: String,
+    required: true,
+  },
+  
+  isDeactivated: { 
+    type: Boolean,
+    default: false,
+  },
   count: {
     type: Number,
     default: 0,
