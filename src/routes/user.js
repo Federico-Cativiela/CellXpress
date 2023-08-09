@@ -22,13 +22,33 @@ router.get("/users/:id", (req,res)=>{
 
     
 //ruta para crear usuario    
-router.post("/users", (req,res)=>{
-    const user = userSchema(req.body)
-    user
-    .save()
-    .then((data)=>res.json(data))
-    .catch((error)=>res.json({ message: error }))
-    })
+router.post("/users", async (req, res) => {
+  const { name, lastname, email, password } = req.body;
+
+  try {
+    // Verificar si el correo electrónico ya existe en la base de datos
+    const existingUser = await userSchema.findOne({ email });
+
+    if (existingUser) {
+      return res.status(409).json({ message: "El correo electrónico ya está en uso." });
+    }
+
+    // Si el correo electrónico no existe, crea el nuevo usuario
+    const newUser = new userSchema({
+      name,
+      lastname,
+      email,
+      password,
+    });
+
+    const savedUser = await newUser.save();
+
+    res.status(201).json(savedUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor." });
+  }
+});
 
 
 //update user: para que el usuario pueda cambiar algun dato personal?
