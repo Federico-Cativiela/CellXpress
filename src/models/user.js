@@ -30,6 +30,39 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  purchaseHistory: [
+    {
+      cart: {
+        type: mongoose.Types.ObjectId,
+        ref: "BuyOrder",
+      },
+      date: {
+        type: Date,
+        default: Date.now,
+      },
+      products: [
+        {
+          product: {
+            type: mongoose.Types.ObjectId,
+            ref: "Product",
+          },
+          quantity: {
+            type: Number,
+            required: true,
+          },
+        },
+      ],
+      total: {
+        type: Number,
+        required: true,
+      },
+      status: {
+        type: String,
+        required: true,
+      },
+      // Otros campos que quieras incluir en la compra
+    },
+  ],
 }, {
   versionKey: false
 });
