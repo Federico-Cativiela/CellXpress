@@ -22,8 +22,8 @@ router.get("/users/:id", (req,res)=>{
 
     
 //ruta para crear usuario    
-router.post("/users", async (req, res) => {
-  const { name, lastname, email, password } = req.body;
+router.post("/", async (req, res) => {
+  const { name, phone, email, password } = req.body;
 
   try {
     // Verificar si el correo electrónico ya existe en la base de datos
@@ -36,7 +36,7 @@ router.post("/users", async (req, res) => {
     // Si el correo electrónico no existe, crea el nuevo usuario
     const newUser = new userSchema({
       name,
-      lastname,
+      phone,
       email,
       password,
     });
@@ -54,9 +54,9 @@ router.post("/users", async (req, res) => {
 //update user: para que el usuario pueda cambiar algun dato personal?
 router.put("/users/:id", (req, res) => {
     const { id } = req.params;
-    const { name, email, password,lastname } = req.body;
+    const { name, email, password,phone } = req.body;
     userSchema
-      .updateOne({ _id: id }, { $set: { name, email, password, lastname } })
+      .updateOne({ _id: id }, { $set: { name, email, password, phone } })
       .then((result) => {
         if (result.matchedCount === 0) {
           return res.status(404).json({ error: "Usuario no encontrado" });
