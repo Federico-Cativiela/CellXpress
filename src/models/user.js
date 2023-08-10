@@ -68,9 +68,9 @@ const userSchema = mongoose.Schema({
 });
 
 // Antes de guardar un nuevo usuario, asigna automáticamente el _id generado por Mongoose al campo UID
-userSchema.pre("save", function(next) {
-  this.UID = this._id;
-  next();
-});
+// userSchema.pre("save", function(next) {
+//   this.UID = this._id;
+//   next();
+// });
 
 module.exports = mongoose.model("User", userSchema);
