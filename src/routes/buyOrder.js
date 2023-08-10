@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const BuyOrder = require("../models/buyOrder");
 const Product = require("../models/product");
+const User = require("../models/user");
+const stripe = require("stripe")("sk_test_51NccbYLQEdx2wACSJ21hlx0Y1Bx9j5eKHRyJqAnIjInB32qgNGW76bkPdP3Qt7JbcFc6UCaRkAV8LVhetHRAyRjx00SIUry2yX");
 
 // Agregar un producto al carrito
 router.post("/add-to-cart", async (req, res) => {
@@ -62,8 +64,6 @@ router.post("/add-to-cart", async (req, res) => {
     }
   });
   
-  
-
 // Ver el contenido del carrito
 router.get("/cart/:userId", async (req, res) => {
   const { userId } = req.params;
@@ -179,6 +179,93 @@ router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
     res.status(500).json({ message: "Hubo un error en el servidor." });
   }
 });
+
+router.get("/success", async (req, res) => {
+  const { userId } = req.body;
+  try {
+    // Obtén el usuario y su carrito actual
+    const user = await User.findById(userId);
+    const cart = await BuyOrder.findOne({ userId }).populate("products.product");
+
+    // Limpia los productos y resetea el carrito del usuario
+    // Esto dependerá de cómo estás manejando los carritos en tu lógica
+    // ...
+
+    res.send("Compra exitosa. Tu carrito ha sido reseteado.");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al mostrar el mensaje de exito." });
+  }
+});
+
+// Ruta para realizar el pago
+router.post("/checkout", async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const cart = await BuyOrder.findOne({ userId }).populate("products.product");
+
+    if (!cart) {
+      return res.status(404).json({ message: "Carrito no encontrado." });
+    }
+
+    // Crear una lista de productos para la API de Stripe
+    const lineItems = cart.products.map((item) => ({
+      price_data: {
+        currency: "usd",
+        unit_amount: Math.floor(item.product.price * 100 / 500), // Dividir por el valor del dolar
+        product_data: {
+          name: item.product.title, // Nombre del producto
+          description: item.product.description, // Descripción del producto
+          images: [item.product.image], // Imagen del producto (si tienes una URL)
+        },
+      },
+      quantity: item.quantity,
+    }));
+
+    // Crear una sesión de pago en Stripe
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode: "payment",
+      success_url: "http://localhost:3002/order/success",
+      cancel_url: "http://localhost:3002/order/failure",
+    });
+
+    // Actualizar el estado del BuyOrder a "success"
+    cart.status = "success";
+    await cart.save();
+
+    // Agregar el BuyOrder exitoso al purchaseHistory del usuario
+    const user = await User.findById(userId);
+    user.purchaseHistory.push({
+      cart: cart._id,
+      products: cart.products.map((item) => ({
+        title: item.product.title, // Agrega el título del producto
+        product: item.product._id,
+        quantity: item.quantity,
+      })),
+      total: cart.total,
+      status: cart.status,
+      date: new Date(),
+    });
+    await user.save();
+
+    // Limpia y resetea el carrito actual después del pago exitoso
+    cart.products = [];
+    cart.total = 0;
+    cart.status = "pending"; // Cambia el estado del carrito a "pending"
+    await cart.save();
+
+    const paymentLink = session.url;
+    res.json({ sessionId: session.id, paymentLink: paymentLink });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor" });
+  }
+});
+
+
 
 
 module.exports = router;
