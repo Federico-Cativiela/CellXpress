@@ -23,7 +23,7 @@ router.get("/users/:id", (req,res)=>{
     
 //ruta para crear usuario    
 router.post("/users", async (req, res) => {
-  const { name, lastname, email, password } = req.body;
+  const { name, lastname, email, password} = req.body;
 
   try {
     // Verificar si el correo electrónico ya existe en la base de datos
