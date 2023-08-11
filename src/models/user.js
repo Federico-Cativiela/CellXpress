@@ -2,10 +2,7 @@ const mongoose = require("mongoose");
 
 const userSchema = mongoose.Schema({
   UID: {
-    type: String,
-    // type: mongoose.Types.ObjectId,
-    // ref: "User",
-    default: ""
+    type: String
   },
   name: {
     type: String,
@@ -13,7 +10,7 @@ const userSchema = mongoose.Schema({
   },
   phone: {
     type: String,
-    required: true,
+    // required: true,
   },
   email: {
     type: String,
