@@ -37,29 +37,42 @@ router.get("/", (req, res) => {
   });
 
 
-// Ruta para obtener celulares por marca y rango de precios
-router.get("/brand/:brand", (req, res) => {
-  const brand = req.params.brand;
-  const minPrice = req.query.minPrice;
-  const maxPrice = req.query.maxPrice;
-
-  // Crear un objeto de consulta para filtrar por marca y rango de precios
-  const query = { brand: brand.toUpperCase() };
-
-  // Agregar el filtro de rango de precios si se proporcionan minPrice y maxPrice válidos
-  if (minPrice && !isNaN(parseFloat(minPrice)) && maxPrice && !isNaN(parseFloat(maxPrice))) {
-    query.price = { $gte: parseFloat(minPrice), $lte: parseFloat(maxPrice) };
-  } else if (minPrice && !isNaN(parseFloat(minPrice))) {
-    query.price = { $gte: parseFloat(minPrice) };
-  } else if (maxPrice && !isNaN(parseFloat(maxPrice))) {
-    query.price = { $lte: parseFloat(maxPrice) };
-  }
-
-  product
-    .find(query)
-    .then((filteredProducts) => res.json({ products: filteredProducts }))
-    .catch((error) => res.status(400).json({ error: "Error al obtener los celulares por marca y rango de precios" }));
-});
+  router.get("/brand/:brand", (req, res) => {
+    const brand = req.params.brand;
+    const minPrice = req.query.minPrice;
+    const maxPrice = req.query.maxPrice;
+    const ram = req.query.ram; // Nuevo: agregar filtro por ram
+    const cameraInches = req.query.cameraInches; // Nuevo: agregar filtro por cameraInches
+    const screenSize = req.query.screenSize; // Nuevo: agregar filtro por screenSize
+  
+    // Crear un objeto de consulta para filtrar por marca, rango de precios y atributos
+    const query = { brand: brand.toUpperCase() };
+  
+    if (minPrice && !isNaN(parseFloat(minPrice)) && maxPrice && !isNaN(parseFloat(maxPrice))) {
+      query.price = { $gte: parseFloat(minPrice), $lte: parseFloat(maxPrice) };
+    } else if (minPrice && !isNaN(parseFloat(minPrice))) {
+      query.price = { $gte: parseFloat(minPrice) };
+    } else if (maxPrice && !isNaN(parseFloat(maxPrice))) {
+      query.price = { $lte: parseFloat(maxPrice) };
+    }
+  
+    if (ram) {
+      query.ram = ram;
+    }
+  
+    if (cameraInches) {
+      query.cameraInches = cameraInches;
+    }
+  
+    if (screenSize) {
+      query.screenSize = screenSize;
+    }
+  
+    product
+      .find(query)
+      .then((filteredProducts) => res.json({ products: filteredProducts }))
+      .catch((error) => res.status(400).json({ error: "Error al obtener los celulares por marca y rango de precios" }));
+  });
 
 
 // Ruta para crear un nuevo producto
