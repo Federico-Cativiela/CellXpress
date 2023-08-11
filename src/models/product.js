@@ -48,7 +48,10 @@ const productSchema = mongoose.Schema({
     default: 0,
     required: false,
   }
-});
+},
+{versionKey: false}
+);
+
 productSchema.index({ title: "text" }); // Definir índice de texto en el campo "title"
 
 module.exports = mongoose.model("Product", productSchema);
