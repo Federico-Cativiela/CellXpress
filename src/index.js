@@ -13,7 +13,6 @@ const userRoutes = require("./routes/user")
 //middlewares
 app.use(express.json())
 app.use(morgan("dev"));
-<<<<<<< HEAD
 
 app.use(cors({ origin: "http://localhost:3002" }));
 // agregado por mi 
@@ -21,10 +20,6 @@ app.use(cors({ origin: "http://localhost:3002" }));
 app.use(cors({ origin: "http://localhost:5173" }));
 
 
-=======
-app.use(cors({}));
-//routes
->>>>>>> bd980f783324160ca61a7992df791cec3b3a9647
 app.use("/", userRoutes);
 app.use('/products', productRoutes)
 
