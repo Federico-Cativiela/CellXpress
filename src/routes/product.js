@@ -21,6 +21,51 @@ router.get("/", (req, res) => {
       .catch((error) => res.status(400).json({ error: "Error al obtener los productos" }));
   });
   
+  
+  
+  // Ruta para obtener productos por atributos y marca
+  router.get("/filter", (req, res) => {
+    const brand = req.query.brand; // Nuevo: agregar filtro por marca
+    const minPrice = req.query.minPrice;
+    const maxPrice = req.query.maxPrice;
+    const ram = req.query.ram;
+    const cameraInches = req.query.cameraInches;
+    const screenSize = req.query.screenSize;
+    
+    // Crear un objeto de consulta inicial vacío
+    const query = {};
+    
+    if (brand) {
+      query.brand = brand.toUpperCase();
+  }
+  
+  if (minPrice && !isNaN(parseFloat(minPrice)) && maxPrice && !isNaN(parseFloat(maxPrice))) {
+    query.price = { $gte: parseFloat(minPrice), $lte: parseFloat(maxPrice) };
+  } else if (minPrice && !isNaN(parseFloat(minPrice))) {
+    query.price = { $gte: parseFloat(minPrice) };
+  } else if (maxPrice && !isNaN(parseFloat(maxPrice))) {
+    query.price = { $lte: parseFloat(maxPrice) };
+  }
+  
+  if (ram) {
+    query.ram = ram;
+  }
+  
+  if (cameraInches) {
+    query.cameraInches = cameraInches;
+  }
+  
+  if (screenSize) {
+    query.screenSize = screenSize;
+  }
+
+  product
+    .find(query)
+    .then((filteredProducts) => res.json({ products: filteredProducts }))
+    .catch((error) => res.status(400).json({ error: "Error al obtener productos por atributos" }));
+  });
+  
+  
   // Ruta para buscar por id
   router.get("/:id", (req, res) => {
     const productId = req.params.id;
@@ -35,32 +80,6 @@ router.get("/", (req, res) => {
       })
       .catch((error) => res.status(500).json({ error: `Error al obtener el producto con ID ${productId}` }));
   });
-
-
-// Ruta para obtener celulares por marca y rango de precios
-router.get("/brand/:brand", (req, res) => {
-  const brand = req.params.brand;
-  const minPrice = req.query.minPrice;
-  const maxPrice = req.query.maxPrice;
-
-  // Crear un objeto de consulta para filtrar por marca y rango de precios
-  const query = { brand: brand.toUpperCase() };
-
-  // Agregar el filtro de rango de precios si se proporcionan minPrice y maxPrice válidos
-  if (minPrice && !isNaN(parseFloat(minPrice)) && maxPrice && !isNaN(parseFloat(maxPrice))) {
-    query.price = { $gte: parseFloat(minPrice), $lte: parseFloat(maxPrice) };
-  } else if (minPrice && !isNaN(parseFloat(minPrice))) {
-    query.price = { $gte: parseFloat(minPrice) };
-  } else if (maxPrice && !isNaN(parseFloat(maxPrice))) {
-    query.price = { $lte: parseFloat(maxPrice) };
-  }
-
-  product
-    .find(query)
-    .then((filteredProducts) => res.json({ products: filteredProducts }))
-    .catch((error) => res.status(400).json({ error: "Error al obtener los celulares por marca y rango de precios" }));
-});
-
 
 // Ruta para crear un nuevo producto
 router.post("/", (req, res) => {

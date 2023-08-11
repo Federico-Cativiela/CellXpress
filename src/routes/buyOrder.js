@@ -7,63 +7,62 @@ const stripe = require("stripe")("sk_test_51NccbYLQEdx2wACSJ21hlx0Y1Bx9j5eKHRyJq
 
 // Agregar un producto al carrito
 router.post("/add-to-cart", async (req, res) => {
-    const { userId, productId, quantity } = req.body;
-  
-    try {
-      // Busca el producto en la base de datos para obtener su precio y cantidad disponible
-      const product = await Product.findById(productId);
-  
-      if (!product) {
-        return res.status(404).json({ message: "Producto no encontrado." });
-      }
-  
-      const productPrice = product.price;
-  
-      // Verifica si hay suficiente cantidad disponible del producto
-      if (product.count < quantity) {
-        return res.status(400).json({ message: "Cantidad insuficiente de producto." });
-      }
-  
-      // Resta la cantidad del producto
-      product.count -= quantity;
-  
-      // Guarda los cambios en el producto
-      await product.save();
-  
-      // Continúa con la lógica para agregar el producto al carrito
-      const existingCart = await BuyOrder.findOne({ userId });
-  
-      if (existingCart) {
-        const existingProduct = existingCart.products.find(
-          (item) => item.product.toString() === productId
-        );
-  
-        if (existingProduct) {
-          existingProduct.quantity += quantity;
-        } else {
-          existingCart.products.push({ product: productId, quantity });
-        }
-  
-        existingCart.total += quantity * productPrice;
-  
-        const updatedCart = await existingCart.save();
-        res.json(updatedCart);
-      } else {
-        const newCart = new BuyOrder({
-          userId,
-          products: [{ product: productId, quantity }],
-          total: quantity * productPrice,
-        });
-  
-        const savedCart = await newCart.save();
-        res.json(savedCart);
-      }
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Hubo un error en el servidor." });
+  const { userId, productId, quantity } = req.body;
+
+  try {
+    // Busca el producto en la base de datos para obtener su precio y cantidad disponible
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado." });
     }
-  });
-  
+
+    const productPrice = product.price;
+
+    // Verifica si hay suficiente cantidad disponible del producto
+    if (product.count < quantity) {
+      return res.status(400).json({ message: "Cantidad insuficiente de producto." });
+    }
+
+    // Resta la cantidad del producto
+    product.count -= quantity;
+
+    // Guarda los cambios en el producto
+    await product.save();
+
+    // Continúa con la lógica para agregar el producto al carrito
+    const existingCart = await BuyOrder.findOne({ userId });
+
+    if (existingCart) {
+      const existingProduct = existingCart.products.find(
+        (item) => item.product.toString() === productId
+      );
+
+      if (existingProduct) {
+        existingProduct.quantity += quantity;
+      } else {
+        existingCart.products.push({ product: productId, quantity });
+      }
+
+      existingCart.total += quantity * productPrice;
+
+      const updatedCart = await existingCart.save();
+      res.json(updatedCart);
+    } else {
+      const newCart = new BuyOrder({
+        userId,
+        products: [{ product: productId, quantity }],
+        total: quantity * productPrice,
+      });
+
+      const savedCart = await newCart.save();
+      res.json(savedCart);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor." });
+  }
+});
 // Ver el contenido del carrito
 router.get("/cart/:userId", async (req, res) => {
   const { userId } = req.params;
