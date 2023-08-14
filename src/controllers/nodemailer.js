@@ -166,7 +166,9 @@ const CONTACT_MESSAGE_FIELDS = {
 const sendEmail = async (req, res) => {
   const data = req.body;
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    PORT:465,
+    secure:true,
     auth: {
       user: email,
       pass,

@@ -6,7 +6,7 @@ const sendEmailRegister= require("../controllers/nodemailerRegister");
 const router = express.Router();
 
 router.post("/contacto", sendEmail);
-router.post("/orden-de-compra", sendEmailOrder)
+// router.post("/orden-de-compra", sendEmailOrder)
 router.post("/register", sendEmailRegister)
 
 module.exports = router;
