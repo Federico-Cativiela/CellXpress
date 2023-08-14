@@ -264,7 +264,15 @@ router.post("/checkout", async (req, res) => {
   }
 });
 
-
+router.get("/all", async (req, res) => {
+  try {
+    const allBuyOrders = await BuyOrder.find();
+    res.json(allBuyOrders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor." });
+  }
+});
 
 
 module.exports = router;
