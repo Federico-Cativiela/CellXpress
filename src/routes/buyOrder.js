@@ -30,8 +30,8 @@ router.post("/add-to-cart", async (req, res) => {
     // Guarda los cambios en el producto
     await product.save();
 
-    // Continúa con la lógica para agregar el producto al carrito
-    const existingCart = await BuyOrder.findOne({ userId });
+    // Busca la orden de compra pendiente del usuario
+    let existingCart = await BuyOrder.findOne({ userId, status: "pending" });
 
     if (existingCart) {
       const existingProduct = existingCart.products.find(
@@ -63,6 +63,10 @@ router.post("/add-to-cart", async (req, res) => {
     res.status(500).json({ message: "Hubo un error en el servidor." });
   }
 });
+
+
+
+
 // Ver el contenido del carrito
 router.get("/cart/:userId", async (req, res) => {
   const { userId } = req.params;
@@ -179,33 +183,38 @@ router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
   }
 });
 
-router.get("/success", async (req, res) => {
-  const { userId } = req.body;
+router.get("/success/:userId", async (req, res) => {
+  const { userId } = req.params;
   try {
-    // Obtén el usuario y su carrito actual
-    const user = await User.findById(userId);
-    const cart = await BuyOrder.findOne({ userId }).populate("products.product");
+    // Busca la orden de compra pendiente del usuario
+    const pendingCart = await BuyOrder.findOne({ userId, status: "pending" });
 
-    // Limpia los productos y resetea el carrito del usuario
-    // Esto dependerá de cómo estás manejando los carritos en tu lógica
-    // ...
+    if (!pendingCart) {
+      return res.status(404).json({ message: "No se encontró ninguna orden de compra pendiente." });
+    }
 
-    res.send("Compra exitosa. Tu carrito ha sido reseteado.");
+    // Cambia el estado de la orden a "success"
+    pendingCart.status = "success";
+    await pendingCart.save();
+
+    res.send("Compra exitosa. Tu orden de compra ha sido actualizada a 'success'.");
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error al mostrar el mensaje de exito." });
+    res.status(500).json({ message: "Error al mostrar el mensaje de éxito." });
   }
 });
+
 
 // Ruta para realizar el pago
 router.post("/checkout", async (req, res) => {
   const { userId } = req.body;
 
   try {
-    const cart = await BuyOrder.findOne({ userId }).populate("products.product");
+    // Buscar el carrito pendiente del usuario
+    const cart = await BuyOrder.findOne({ userId, status: "pending" }).populate("products.product");
 
     if (!cart) {
-      return res.status(404).json({ message: "Carrito no encontrado." });
+      return res.status(404).json({ message: "Carrito no encontrado o ya se realizó una compra exitosa." });
     }
 
     // Crear una lista de productos para la API de Stripe
@@ -227,34 +236,10 @@ router.post("/checkout", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: "http://localhost:3002/order/success",
+      success_url: `http://localhost:3002/order/success/${userId}`,
       cancel_url: "http://localhost:3002/order/failure",
     });
 
-    // Actualizar el estado del BuyOrder a "success"
-    cart.status = "success";
-    await cart.save();
-
-    // Agregar el BuyOrder exitoso al purchaseHistory del usuario
-    const user = await User.findById(userId);
-    user.purchaseHistory.push({
-      cart: cart._id,
-      products: cart.products.map((item) => ({
-        title: item.product.title, // Agrega el título del producto
-        product: item.product._id,
-        quantity: item.quantity,
-      })),
-      total: cart.total,
-      status: cart.status,
-      date: new Date(),
-    });
-    await user.save();
-
-    // Limpia y resetea el carrito actual después del pago exitoso
-    cart.products = [];
-    cart.total = 0;
-    cart.status = "pending"; // Cambia el estado del carrito a "pending"
-    await cart.save();
 
     const paymentLink = session.url;
     res.json({ sessionId: session.id, paymentLink: paymentLink });
@@ -263,6 +248,7 @@ router.post("/checkout", async (req, res) => {
     res.status(500).json({ message: "Hubo un error en el servidor" });
   }
 });
+
 
 router.get("/all", async (req, res) => {
   try {
