@@ -1,5 +1,6 @@
 const express = require("express")
 const userSchema = require("../models/user")
+const postMailerRegister = require("../controllers/nodemailerRegister")
 
 const router = express.Router()
 
@@ -24,7 +25,7 @@ router.get("/users/:id", (req,res)=>{
 //ruta para crear usuario    
 
 router.post("/", async (req, res) => {
-  const { name, phone, email, password ,UID} = req.body;
+  const { name, phone, email, password } = req.body;
 
 
   try {
@@ -41,8 +42,11 @@ router.post("/", async (req, res) => {
       phone,
       email,
       password,
-      UID
     });
+
+    const sendEmail = await postMailerRegister(newUser)
+
+     console.log(sendEmail)
 
     const savedUser = await newUser.save();
 
