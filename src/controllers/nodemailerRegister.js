@@ -8,7 +8,7 @@ const postMailerRegister = async function(newUser){
         to:newUser.email,
         subject:"Registro en CellXpress",
         html:`
-        <b>Gracias por confiar en nosotros ,te has registrado exitosamente!:</b>
+        <b>Gracias por confiar en nosotros ,te has registrado exitosamente!</b>
         `
         
     })
