@@ -33,7 +33,7 @@ router.post("/", async (req, res) => {
     const existingUser = await userSchema.findOne({ email });
 
     if (existingUser) {
-      return res.status(409).json({ error: error.message= "El correo electrónico ya está en uso." });
+      return res.status(409).json( {message: "El correo electrónico ya está en uso." });
     }
 
     // Si el correo electrónico no existe, crea el nuevo usuario
