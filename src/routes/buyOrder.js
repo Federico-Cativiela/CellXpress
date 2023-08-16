@@ -77,13 +77,16 @@ router.post("/add-to-cart", async (req, res) => {
 
 
 
-
-// Ver el contenido del carrito
-router.get("/cart/:userId", async (req, res) => {
-  const { userId } = req.params;
+// Ver el contenido del carrito por buyOrder _id
+router.get("/cart/:buyOrderId", async (req, res) => {
+  const { buyOrderId } = req.params;
 
   try {
-    const cart = await BuyOrder.findOne({ userId }).populate("products.product");
+    const cart = await BuyOrder.findById(buyOrderId).populate("products.product");
+
+    if (!cart) {
+      return res.status(404).json({ message: "Carrito no encontrado." });
+    }
 
     res.json(cart);
   } catch (error) {
@@ -91,6 +94,7 @@ router.get("/cart/:userId", async (req, res) => {
     res.status(500).json({ message: "Hubo un error en el servidor." });
   }
 });
+
 
 // Modificar la cantidad de productos en el carrito
 router.put("/update-cart/:userId/:productId", async (req, res) => {
@@ -263,7 +267,7 @@ router.post("/checkout", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `http://localhost:3002/order/success/${userId}?lineItems=${encodeURIComponent(JSON.stringify(lineItems))}`,
+      success_url: `http://localhost:3002/order/success/${cart._id}`, // Cambio aquí
       cancel_url: "http://localhost:3002/order/failure",
       customer_email: user.email
     });
@@ -277,80 +281,81 @@ router.post("/checkout", async (req, res) => {
   }
 });
 
-router.get("/success/:userId", async (req, res) => {
-  const { userId } = req.params;
-  const lineItems = JSON.parse(decodeURIComponent(req.query.lineItems));
+router.get("/success/:buyOrderId", async (req, res) => {
+  const { buyOrderId } = req.params;
+
   try {
-    // Busca la orden de compra pendiente del usuario
-    const pendingCart = await BuyOrder.findOne({ userId, status: "pending" });
-    if (!pendingCart) {
+    // Obtén los detalles del carrito directamente desde la base de datos por su ID
+    const cart = await BuyOrder.findById(buyOrderId).populate("products.product");
+
+    if (!cart) {
       return res.status(404).json({ message: "No se encontró ninguna orden de compra pendiente." });
     }
 
     // Cambia el estado de la orden a "success"
-    pendingCart.status = "success";
-    await pendingCart.save();
+    cart.status = "success";
+    await cart.save();
 
     // Obtén los detalles del usuario
-    const user = await User.findById(userId);
+    const user = await User.findById(cart.userId);
     
      // Obtén la fecha actual en el formato deseado (por ejemplo, "15 de agosto de 2023")
      const currentDate = new Date();
      const options = { year: "numeric", month: "long", day: "numeric" };
      const formattedDate = currentDate.toLocaleDateString("es-ES", options);
 
-    const successCart = await BuyOrder.findOne({ userId, status: "success" });
 
 
 // Envía un correo electrónico de confirmación de compra
 const emailContent = `
-      <html>
-      <head>
-        <style>
-          body {
-            background-color: #cfcfcf;
-            color: #333;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-          }
-          h1 {
-            color: #e57373;
-          }
-          ul {
-            list-style: none;
-            padding: 0;
-          }
-          li {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-            margin: 10px 0;
-          }
-          img {
-            max-width: 200px;
-            height: auto;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>¡Gracias por tu compra en nuestra tienda!</h1>
-        <h2>Detalles de la compra:</h2>
-        <ul>
-          ${lineItems.map(item => (
-            `<li>
-              ${item.quantity} x ${item.price_data.product_data.name} - Total: $${(item.price_data.unit_amount / 100 * item.quantity).toFixed(2)}<br>
-              <img src="${item.price_data.product_data.images[0]}" alt="Imagen del producto"><br>
-              ${item.price_data.product_data.description}
-            </li>`
-          )).join("")}
-        </ul>
-        <p>Fecha: ${formattedDate}</p>
-        <p>¡Esperamos verte nuevamente pronto!</p>
-      </body>
-      </html>
-    `;
+<html>
+<head>
+  <style>
+    body {
+      background-color: #cfcfcf;
+      color: #333;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #e57373;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    img {
+      max-width: 200px;
+      height: auto;
+    }
+  </style>
+</head>
+  <body>
+    <h1>¡Gracias por tu compra en nuestra tienda!</h1>
+    <h2>Detalles de la compra:</h2>
+    <ul>
+      ${cart.products.map(item => (
+        `<li>
+          ${item.quantity} x ${item.product.title} - Total: $${(item.product.price * item.quantity).toFixed(2)}<br>
+          <img src="${item.product.image}" alt="Imagen del producto"><br>
+          ${item.product.description}
+        </li>`
+      )).join("")}
+    </ul>
+    <p>Fecha: ${formattedDate}</p>
+    <p>¡Esperamos verte nuevamente pronto!</p>
+  </body>
+  </html>
+`;
+
 
 
 
