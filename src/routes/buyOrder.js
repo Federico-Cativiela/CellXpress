@@ -148,14 +148,14 @@ router.put("/update-cart/:userId/:productId", async (req, res) => {
   });
   
 // Eliminar un producto del carrito
-router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
-  const { userId, productId } = req.params;
+router.delete("/remove-from-cart/:orderId/:productId", async (req, res) => {
+  const { orderId, productId } = req.params;
 
   try {
-    const existingCart = await BuyOrder.findOne({ userId });
+    const existingCart = await BuyOrder.findById(orderId);
 
     if (!existingCart) {
-      return res.status(404).json({ message: "Carrito no encontrado." });
+      return res.status(404).json({ message: "Orden no encontrada." });
     }
 
     const existingProduct = existingCart.products.find(
@@ -163,7 +163,7 @@ router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
     );
 
     if (!existingProduct) {
-      return res.status(404).json({ message: "Producto no encontrado en el carrito." });
+      return res.status(404).json({ message: "Producto no encontrado en la orden." });
     }
 
     const product = await Product.findById(productId);
@@ -174,18 +174,18 @@ router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
 
     const productPrice = product.price;
 
-    // Restablece la cantidad del producto en la base de datos antes de eliminarlo del carrito
+    // Restablece la cantidad del producto en la base de datos antes de eliminarlo de la orden
     product.count += existingProduct.quantity;
 
-    // Elimina el producto del carrito
+    // Elimina el producto de la orden
     existingCart.products = existingCart.products.filter(
       (item) => item.product.toString() !== productId
     );
 
-    // Actualiza el total del carrito
+    // Actualiza el total de la orden
     existingCart.total -= existingProduct.quantity * productPrice;
 
-    // Guarda los cambios en el carrito y devuelve la respuesta
+    // Guarda los cambios en la orden y devuelve la respuesta
     await existingCart.save();
 
     // Actualiza la cantidad del producto en la base de datos
@@ -197,6 +197,7 @@ router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
     res.status(500).json({ message: "Hubo un error en el servidor." });
   }
 });
+
 
 // Vaciar el carrito de un usuario
 router.delete("/empty-cart/:userId", async (req, res) => {
@@ -355,11 +356,6 @@ const emailContent = `
   </body>
   </html>
 `;
-
-
-
-
-
 
     const mailOptions = {
       from: process.env.NODE_EMAIL, // Cambia esto al correo desde el que deseas enviar el correo
