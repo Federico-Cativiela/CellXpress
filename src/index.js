@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 require("dotenv").config()
 const morgan = require("morgan");
 const cors = require("cors");
+const session = require('express-session');
+
 
 const app = express();
 const port = process.env.port || 3002
@@ -10,6 +12,13 @@ const uri = process.env.MONGODB_URI
 const productRoutes = require("./routes/product")
 const userRoutes = require("./routes/user")
 const buyOrderRoutes = require("./routes/buyOrder")
+
+// Configuración de express-session
+app.use(session({
+secret: 'acasdawdawdqwedrqaeqweqw', 
+resave: false,
+saveUninitialized: true
+}));
 
 //middlewares
 app.use(express.json())
