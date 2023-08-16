@@ -220,7 +220,6 @@ router.get("/success/:userId", async (req, res) => {
 router.post("/checkout", async (req, res) => {
   const { userId } = req.query;
 
-  console.log(userId);
   try {
     // Buscar el carrito pendiente del usuario
     // const user = await User.findById(userId)
@@ -251,8 +250,8 @@ router.post("/checkout", async (req, res) => {
     // Crear una sesión de pago en Stripe
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: lineItems,
       mode: "payment",
+      line_items: lineItems,
       success_url: `http://localhost:3002/order/success/${userId}`,
       cancel_url: "http://localhost:3002/order/failure",
     });
