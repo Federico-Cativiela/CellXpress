@@ -10,7 +10,7 @@ const stripe = require("stripe")(
 
 // Agregar un producto al carrito
 router.post("/add-to-cart", async (req, res) => {
-  const { userId, productId, quantity } = req.body;
+  const { userId, productId, quantity, title } = req.body;
 
   try {
     // Busca el producto en la base de datos para obtener su precio y cantidad disponible
@@ -58,6 +58,7 @@ router.post("/add-to-cart", async (req, res) => {
         userId,
         products: [{ product: productId, quantity }],
         total: quantity * productPrice,
+        title: title,
       });
 
       const savedCart = await newCart.save();
@@ -223,9 +224,9 @@ router.post("/checkout", async (req, res) => {
   try {
     // Buscar el carrito pendiente del usuario
     // const user = await User.findById(userId)
-    const cart = await BuyOrder.findOne({ userId, status: "pending" }).populate(
-      "products.product"
-    );
+    const cart = await BuyOrder.findOne({ userId, status: "pending" })
+      .populate("products.product")
+      .populate("products.title");
 
     if (!cart) {
       return res.status(404).json({
@@ -254,7 +255,17 @@ router.post("/checkout", async (req, res) => {
       line_items: lineItems,
       success_url: `http://localhost:3002/order/success/${userId}`,
       cancel_url: "http://localhost:3002/order/failure",
+      // customer_email: user.email,
     });
+
+    let event;
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+    }
+
+    res.json({ received: true });
+
     // const emailContent = `
     //   ¡Gracias por tu compra en nuestra tienda!
     //   Detalles de la compra:
