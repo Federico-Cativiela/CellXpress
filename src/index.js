@@ -11,6 +11,7 @@ const productRoutes = require("./routes/product")
 const userRoutes = require("./routes/user")
 const buyOrderRoutes = require("./routes/buyOrder")
 
+
 //middlewares
 app.use(express.json())
 app.use(morgan("dev"));
@@ -19,6 +20,7 @@ app.use(cors({}));
 app.use("/", userRoutes);
 app.use('/products', productRoutes)
 app.use("/order", buyOrderRoutes);
+
 
 
 //app.use("/orders", buyOrderRouter);
