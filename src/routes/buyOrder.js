@@ -286,8 +286,7 @@ router.post("/checkout", async (req, res) => {
     const paymentLink = session.url;
     res.json({ sessionId: session.id, paymentLink: paymentLink });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Hubo un error en el servidor" });
+    res.status(500).send("Hubo un error en el servidor");
   }
 });
 
