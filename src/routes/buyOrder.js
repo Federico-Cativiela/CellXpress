@@ -224,9 +224,10 @@ router.post("/checkout", async (req, res) => {
   try {
     // Buscar el carrito pendiente del usuario
     // const user = await User.findById(userId)
-    const cart = await BuyOrder.findOne({ userId, status: "pending" })
-      .populate("products.product")
-      .populate("products.title");
+    const cart = await BuyOrder.findOne({ userId, status: "pending" }).populate(
+      "products.product"
+    );
+    // .populate("products.title");
 
     if (!cart) {
       return res.status(404).json({
@@ -260,7 +261,7 @@ router.post("/checkout", async (req, res) => {
 
     let event;
 
-    if (event.type === "checkout.session.completed") {
+    if (event?.type === "checkout.session.completed") {
       const session = event.data.object;
     }
 
