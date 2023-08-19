@@ -95,6 +95,24 @@ router.get("/cart/:buyOrderId", async (req, res) => {
   }
 });
 
+// Obtener todas las órdenes de compra por userId
+router.get("/orders/user/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const orders = await BuyOrder.find({ userId }).populate("products.product");
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: "No se encontraron ordenes con el id proporcionado" });
+    }
+
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor" });
+  }
+});
+
 
 // Modificar la cantidad de productos en el carrito
 router.put("/update-cart/:userId/:productId", async (req, res) => {
