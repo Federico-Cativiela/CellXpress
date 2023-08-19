@@ -20,6 +20,16 @@ router.get("/users/:id", (req,res)=>{
     .catch((error)=>res.json({ message: error }))
     })
 
+//Ruta para obtener todos los usuarios por id
+router.get("/users/email/:email", (req,res)=>{
+  const {email} = req.params;
+  userSchema
+  .findOne({email: email})
+  .then((data)=>res.json(data))
+  .catch((error)=>res.json({ message: error }))
+  })
+
+
     
 //ruta para crear usuario    
 
