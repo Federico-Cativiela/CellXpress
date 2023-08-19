@@ -25,7 +25,7 @@ router.get("/users/email/:email", (req,res)=>{
   const {email} = req.params;
   userSchema
   .findOne({email: email})
-  .then((data)=>res.json(data))
+  .then((data)=>res.json(data._id))
   .catch((error)=>res.json({ message: error }))
   })
 
