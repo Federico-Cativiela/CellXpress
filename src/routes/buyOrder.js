@@ -3,10 +3,19 @@ const router = express.Router();
 const BuyOrder = require("../models/buyOrder");
 const Product = require("../models/product");
 const User = require("../models/user");
-const postMailerOrder = require("../controllers/nodemailerOrder");
 const stripe = require("stripe")(
   "sk_test_51NccbYLQEdx2wACSJ21hlx0Y1Bx9j5eKHRyJqAnIjInB32qgNGW76bkPdP3Qt7JbcFc6UCaRkAV8LVhetHRAyRjx00SIUry2yX"
 );
+const nodemailer = require("nodemailer");
+
+// Configura el transporte de correo
+const transporter = nodemailer.createTransport({
+  service: "gmail", // Puedes usar un servicio de correo como Gmail o configurar tu propio servidor SMTP
+  auth: {
+    user: process.env.NODE_EMAIL, // Cambia esto al correo desde el que deseas enviar los correos
+    pass: process.env.NODE_EMAIL_PASS, // Cambia esto a tu contraseña
+  },
+});
 
 // Agregar un producto al carrito
 router.post("/add-to-cart", async (req, res) => {
@@ -70,14 +79,18 @@ router.post("/add-to-cart", async (req, res) => {
   }
 });
 
-// Ver el contenido del carrito
-router.get("/cart/:userId", async (req, res) => {
-  const { userId } = req.params;
+// Ver el contenido del carrito por buyOrder _id
+router.get("/cart/:buyOrderId", async (req, res) => {
+  const { buyOrderId } = req.params;
 
   try {
-    const cart = await BuyOrder.findOne({ userId }).populate(
+    const cart = await BuyOrder.findById(buyOrderId).populate(
       "products.product"
     );
+
+    if (!cart) {
+      return res.status(404).json({ message: "Carrito no encontrado." });
+    }
 
     res.json(cart);
   } catch (error) {
@@ -140,14 +153,14 @@ router.put("/update-cart/:userId/:productId", async (req, res) => {
 });
 
 // Eliminar un producto del carrito
-router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
-  const { userId, productId } = req.params;
+router.delete("/remove-from-cart/:orderId/:productId", async (req, res) => {
+  const { orderId, productId } = req.params;
 
   try {
-    const existingCart = await BuyOrder.findOne({ userId });
+    const existingCart = await BuyOrder.findById(orderId);
 
     if (!existingCart) {
-      return res.status(404).json({ message: "Carrito no encontrado." });
+      return res.status(404).json({ message: "Orden no encontrada." });
     }
 
     const existingProduct = existingCart.products.find(
@@ -168,18 +181,18 @@ router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
 
     const productPrice = product.price;
 
-    // Restablece la cantidad del producto en la base de datos antes de eliminarlo del carrito
+    // Restablece la cantidad del producto en la base de datos antes de eliminarlo de la orden
     product.count += existingProduct.quantity;
 
-    // Elimina el producto del carrito
+    // Elimina el producto de la orden
     existingCart.products = existingCart.products.filter(
       (item) => item.product.toString() !== productId
     );
 
-    // Actualiza el total del carrito
+    // Actualiza el total de la orden
     existingCart.total -= existingProduct.quantity * productPrice;
 
-    // Guarda los cambios en el carrito y devuelve la respuesta
+    // Guarda los cambios en la orden y devuelve la respuesta
     await existingCart.save();
 
     // Actualiza la cantidad del producto en la base de datos
@@ -192,48 +205,58 @@ router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
   }
 });
 
-router.get("/success/:userId", async (req, res) => {
+// Vaciar el carrito de un usuario
+router.delete("/empty-cart/:userId", async (req, res) => {
   const { userId } = req.params;
+
   try {
     // Busca la orden de compra pendiente del usuario
-    const pendingCart = await BuyOrder.findOne({ userId, status: "pending" });
+    const existingCart = await BuyOrder.findOne({ userId, status: "pending" });
 
-    if (!pendingCart) {
-      return res
-        .status(404)
-        .json({ message: "No se encontró ninguna orden de compra pendiente." });
+    if (!existingCart) {
+      return res.status(404).json({ message: "Carrito no encontrado." });
     }
 
-    // Cambia el estado de la orden a "success"
-    pendingCart.status = "success";
-    await pendingCart.save();
+    // Restaura la cantidad de productos en la base de datos
+    for (const item of existingCart.products) {
+      const product = await Product.findById(item.product);
+      if (product) {
+        product.count += item.quantity;
+        await product.save();
+      }
+    }
 
     res.send(
       "Compra exitosa. Tu orden de compra ha sido actualizada a 'success'."
     );
+    // Vacía el carrito de productos
+    existingCart.products = [];
+    existingCart.total = 0;
+
+    // Guarda los cambios en el carrito
+    await existingCart.save();
+
+    // res.json({ message: "Carrito vaciado exitosamente." });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error al mostrar el mensaje de éxito." });
+    res.status(500).json({ message: "Hubo un error en el servidor." });
   }
 });
 
 // Ruta para realizar el pago
 router.post("/checkout", async (req, res) => {
-  const { userId } = req.body;
+  const { userId } = req.query;
 
   try {
     // Buscar el carrito pendiente del usuario
-    // const user = await User.findById(userId)
-    const cart = await BuyOrder.findOne({ userId, status: "pending" })
-      .populate("products.product")
-      .populate("products.title");
-
+    const cart = await BuyOrder.findOne({ userId, status: "pending" }).populate(
+      "products.product"
+    );
+    // const user = await User.findById(userId);
     if (!cart) {
-      return res
-        .status(404)
-        .json({
-          message: "Carrito no encontrado o ya se realizó una compra exitosa.",
-        });
+      return res.status(404).json({
+        message: "Carrito no encontrado o ya se realizó una compra exitosa.",
+      });
     }
 
     // Crear una lista de productos para la API de Stripe
@@ -255,40 +278,121 @@ router.post("/checkout", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `http://localhost:3002/order/success/${userId}`,
+      success_url: `http://localhost:3002/order/success/${cart._id}`, // Cambio aquí
       cancel_url: "http://localhost:3002/order/failure",
       // customer_email: user.email,
     });
 
-    let event;
-
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-    }
-
-    res.json({ received: true });
-
-    // const emailContent = `
-    //   ¡Gracias por tu compra en nuestra tienda!
-    //   Detalles de la compra:
-    //   ${successCart.products.map(item => (
-    //     `${item.quantity} x ${item.title} `
-    //   )).join("\n")}
-    //   Total: $${successCart.total}
-    //   Fecha: ${successCart.date}
-
-    //   ¡Esperamos verte nuevamente pronto!
-    // `;
-
-    // const sendEmail = await postMailerOrder(user)
-
-    // console.log(sendEmail)
-
     const paymentLink = session.url;
-    res.json({ sessionId: session.id, paymentLink: paymentLink });
+    res.json({
+      sessionId: session.id,
+      paymentLink: paymentLink,
+      lineItems: lineItems,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Hubo un error en el servidor" });
+  }
+});
+
+router.get("/success/:buyOrderId", async (req, res) => {
+  const { buyOrderId } = req.params;
+
+  try {
+    // Obtén los detalles del carrito directamente desde la base de datos por su ID
+    const cart = await BuyOrder.findById(buyOrderId).populate(
+      "products.product"
+    );
+
+    if (!cart) {
+      return res
+        .status(404)
+        .json({ message: "No se encontró ninguna orden de compra pendiente." });
+    }
+
+    // Cambia el estado de la orden a "success"
+    cart.status = "success";
+    await cart.save();
+
+    // Obtén los detalles del usuario
+    const user = await User.findById(cart.userId);
+
+    // Obtén la fecha actual en el formato deseado (por ejemplo, "15 de agosto de 2023")
+    const currentDate = new Date();
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    const formattedDate = currentDate.toLocaleDateString("es-ES", options);
+
+    // Envía un correo electrónico de confirmación de compra
+    const emailContent = `
+<html>
+<head>
+  <style>
+    body {
+      background-color: #cfcfcf;
+      color: #333;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #e57373;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    img {
+      max-width: 200px;
+      height: auto;
+    }
+  </style>
+</head>
+  <body>
+    <h1>¡Gracias por tu compra en nuestra tienda!</h1>
+    <h2>Detalles de la compra:</h2>
+    <ul>
+      ${cart.products
+        .map(
+          (item) =>
+            `<li>
+          ${item.quantity} x ${item.product.title} - Total: $${(
+              item.product.price * item.quantity
+            ).toFixed(2)}<br>
+          <img src="${item.product.image}" alt="Imagen del producto"><br>
+          ${item.product.description}
+        </li>`
+        )
+        .join("")}
+    </ul>
+    <p>Fecha: ${formattedDate}</p>
+    <p>¡Esperamos verte nuevamente pronto!</p>
+  </body>
+  </html>
+`;
+
+    const mailOptions = {
+      from: process.env.NODE_EMAIL, // Cambia esto al correo desde el que deseas enviar el correo
+      to: user.email, // El correo del usuario
+      subject: "Confirmación de compra",
+      html: emailContent,
+    };
+
+    // Envía el correo electrónico
+    await transporter.sendMail(mailOptions);
+
+    res.send(
+      "Compra exitosa. Tu orden de compra ha sido actualizada a 'success'."
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al mostrar el mensaje de éxito." });
   }
 });
 
