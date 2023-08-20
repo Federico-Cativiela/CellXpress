@@ -4,7 +4,6 @@ require("dotenv").config();
 const morgan = require("morgan");
 const cors = require("cors");
 const session = require("express-session");
-
 const app = express();
 const port = process.env.port || 3002;
 const uri = process.env.MONGODB_URI;

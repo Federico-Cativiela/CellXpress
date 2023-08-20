@@ -236,7 +236,7 @@ router.delete("/empty-cart/:userId", async (req, res) => {
     // Guarda los cambios en el carrito
     await existingCart.save();
 
-    res.json({ message: "Carrito vaciado exitosamente." });
+    // res.json({ message: "Carrito vaciado exitosamente." });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Hubo un error en el servidor." });
@@ -252,7 +252,7 @@ router.post("/checkout", async (req, res) => {
     const cart = await BuyOrder.findOne({ userId, status: "pending" }).populate(
       "products.product"
     );
-    const user = await User.findById(userId);
+    // const user = await User.findById(userId);
     if (!cart) {
       return res.status(404).json({
         message: "Carrito no encontrado o ya se realizó una compra exitosa.",
@@ -276,10 +276,11 @@ router.post("/checkout", async (req, res) => {
     // Crear una sesión de pago en Stripe
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
+      line_items: lineItems,
       mode: "payment",
       success_url: `http://localhost:3002/order/success/${cart._id}`, // Cambio aquí
       cancel_url: "http://localhost:3002/order/failure",
-      customer_email: user.email,
+      // customer_email: user.email,
     });
 
     const paymentLink = session.url;
@@ -289,7 +290,8 @@ router.post("/checkout", async (req, res) => {
       lineItems: lineItems,
     });
   } catch (error) {
-    res.status(500).send("Hubo un error en el servidor");
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor" });
   }
 });
 
