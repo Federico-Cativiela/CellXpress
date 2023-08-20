@@ -222,18 +222,14 @@ router.post("/checkout", async (req, res) => {
   const { userId } = req.query;
 
   try {
-    // Buscar el carrito pendiente del usuario
-    // const user = await User.findById(userId)
-    const cart = await BuyOrder.findOne({ userId, status: "pending" }).populate(
-      "products.product"
-    );
-    // .populate("products.title");
-
     if (!cart) {
       return res.status(404).json({
         message: "Carrito no encontrado o ya se realizó una compra exitosa.",
       });
     }
+    const cart = await BuyOrder.findOne({ userId, status: "pending" })
+      .populate("products.product")
+      .populate("products.title");
 
     // Crear una lista de productos para la API de Stripe
     const lineItems = cart.products.map((item) => ({
@@ -262,29 +258,15 @@ router.post("/checkout", async (req, res) => {
     let event;
 
     if (event?.type === "checkout.session.completed") {
-      const session = event.data.object;
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object;
+      }
+
+      res.json({ received: true });
+
+      const paymentLink = session.url;
+      res.json({ sessionId: session.id, paymentLink: paymentLink });
     }
-
-    res.json({ received: true });
-
-    // const emailContent = `
-    //   ¡Gracias por tu compra en nuestra tienda!
-    //   Detalles de la compra:
-    //   ${successCart.products.map(item => (
-    //     `${item.quantity} x ${item.title} `
-    //   )).join("\n")}
-    //   Total: $${successCart.total}
-    //   Fecha: ${successCart.date}
-
-    //   ¡Esperamos verte nuevamente pronto!
-    // `;
-
-    // const sendEmail = await postMailerOrder(user)
-
-    // console.log(sendEmail)
-
-    const paymentLink = session.url;
-    res.json({ sessionId: session.id, paymentLink: paymentLink });
   } catch (error) {
     res.status(500).send("Hubo un error en el servidor");
   }
@@ -297,6 +279,26 @@ router.get("/all", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Hubo un error en el servidor." });
+  }
+});
+
+// Obtener todas las órdenes de compra por userId
+router.get("/orders/user/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const orders = await BuyOrder.find({ userId }).populate("products.product");
+
+    if (orders.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No se encontraron ordenes con el id proporcionado" });
+    }
+
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor" });
   }
 });
 
