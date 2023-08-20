@@ -1,41 +1,40 @@
-const express = require("express")
+const express = require("express");
 const mongoose = require("mongoose");
-require("dotenv").config()
+require("dotenv").config();
 const morgan = require("morgan");
 const cors = require("cors");
-const session = require('express-session');
-
-
+const session = require("express-session");
 const app = express();
-const port = process.env.port || 3002
-const uri = process.env.MONGODB_URI
-const productRoutes = require("./routes/product")
-const userRoutes = require("./routes/user")
-const buyOrderRoutes = require("./routes/buyOrder")
+const port = process.env.port || 3002;
+const uri = process.env.MONGODB_URI;
+const productRoutes = require("./routes/product");
+const userRoutes = require("./routes/user");
+const buyOrderRoutes = require("./routes/buyOrder");
 
 // Configuración de express-session
-app.use(session({
-secret: 'acasdawdawdqwedrqaeqweqw', 
-resave: false,
-saveUninitialized: true
-}));
+app.use(
+  session({
+    secret: "acasdawdawdqwedrqaeqweqw",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
 //middlewares
-app.use(express.json())
+app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors({}));
 //routes
 app.use("/", userRoutes);
-app.use('/products', productRoutes)
+app.use("/products", productRoutes);
 app.use("/order", buyOrderRoutes);
-
 
 //app.use("/orders", buyOrderRouter);
 
-
 //mongodb connection
-mongoose.connect(uri)
-.then(()=>console.log("connected to Mongodb Atlas"))
-.catch((error)=>console.error(error))
+mongoose
+  .connect(uri)
+  .then(() => console.log("connected to Mongodb Atlas"))
+  .catch((error) => console.error(error));
 
-app.listen(port,()=> console.log('server is listening in port', port))
+app.listen(port, () => console.log("server is listening in port", port));
