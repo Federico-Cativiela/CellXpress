@@ -1,5 +1,6 @@
 const express = require("express")
 const userSchema = require("../models/user")
+const postMailerRegister = require("../controllers/nodemailerRegister")
 
 const router = express.Router()
 
@@ -24,7 +25,7 @@ router.get("/users/:id", (req,res)=>{
 //ruta para crear usuario    
 
 router.post("/", async (req, res) => {
-  const { name, phone, email, password ,UID} = req.body;
+  const { name, phone, email, password} = req.body;
 
 
   try {
@@ -32,7 +33,7 @@ router.post("/", async (req, res) => {
     const existingUser = await userSchema.findOne({ email });
 
     if (existingUser) {
-      return res.status(409).json({ message: "El correo electrónico ya está en uso." });
+      return res.status(409).json( {message: "El correo electrónico ya está en uso." });
     }
 
     // Si el correo electrónico no existe, crea el nuevo usuario
@@ -41,8 +42,13 @@ router.post("/", async (req, res) => {
       phone,
       email,
       password,
-      UID
+      rating,
     });
+    
+
+    const sendEmail = await postMailerRegister(newUser)
+
+     console.log(sendEmail)
 
     const savedUser = await newUser.save();
 
@@ -57,9 +63,9 @@ router.post("/", async (req, res) => {
 //update user: para que el usuario pueda cambiar algun dato personal?
 router.put("/users/:id", (req, res) => {
     const { id } = req.params;
-    const { name, email, password,phone } = req.body;
+    const { name, email, password,phone ,admin,isActive } = req.body;
     userSchema
-      .updateOne({ _id: id }, { $set: { name, email, password, phone } })
+      .updateOne({ _id: id }, { $set: { name, email, password, phone,admin,isActive } })
       .then((result) => {
         if (result.matchedCount === 0) {
           return res.status(404).json({ error: "Usuario no encontrado" });

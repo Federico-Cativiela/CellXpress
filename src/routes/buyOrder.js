@@ -3,11 +3,14 @@ const router = express.Router();
 const BuyOrder = require("../models/buyOrder");
 const Product = require("../models/product");
 const User = require("../models/user");
-const stripe = require("stripe")("sk_test_51NccbYLQEdx2wACSJ21hlx0Y1Bx9j5eKHRyJqAnIjInB32qgNGW76bkPdP3Qt7JbcFc6UCaRkAV8LVhetHRAyRjx00SIUry2yX");
+const postMailerOrder = require("../controllers/nodemailerOrder");
+const stripe = require("stripe")(
+  "sk_test_51NccbYLQEdx2wACSJ21hlx0Y1Bx9j5eKHRyJqAnIjInB32qgNGW76bkPdP3Qt7JbcFc6UCaRkAV8LVhetHRAyRjx00SIUry2yX"
+);
 
 // Agregar un producto al carrito
 router.post("/add-to-cart", async (req, res) => {
-  const { userId, productId, quantity } = req.body;
+  const { userId, productId, quantity, title } = req.body;
 
   try {
     // Busca el producto en la base de datos para obtener su precio y cantidad disponible
@@ -21,7 +24,9 @@ router.post("/add-to-cart", async (req, res) => {
 
     // Verifica si hay suficiente cantidad disponible del producto
     if (product.count < quantity) {
-      return res.status(400).json({ message: "Cantidad insuficiente de producto." });
+      return res
+        .status(400)
+        .json({ message: "Cantidad insuficiente de producto." });
     }
 
     // Resta la cantidad del producto
@@ -30,8 +35,8 @@ router.post("/add-to-cart", async (req, res) => {
     // Guarda los cambios en el producto
     await product.save();
 
-    // Continúa con la lógica para agregar el producto al carrito
-    const existingCart = await BuyOrder.findOne({ userId });
+    // Busca la orden de compra pendiente del usuario
+    let existingCart = await BuyOrder.findOne({ userId, status: "pending" });
 
     if (existingCart) {
       const existingProduct = existingCart.products.find(
@@ -53,6 +58,7 @@ router.post("/add-to-cart", async (req, res) => {
         userId,
         products: [{ product: productId, quantity }],
         total: quantity * productPrice,
+        title: title,
       });
 
       const savedCart = await newCart.save();
@@ -63,12 +69,15 @@ router.post("/add-to-cart", async (req, res) => {
     res.status(500).json({ message: "Hubo un error en el servidor." });
   }
 });
+
 // Ver el contenido del carrito
 router.get("/cart/:userId", async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const cart = await BuyOrder.findOne({ userId }).populate("products.product");
+    const cart = await BuyOrder.findOne({ userId }).populate(
+      "products.product"
+    );
 
     res.json(cart);
   } catch (error) {
@@ -79,55 +88,57 @@ router.get("/cart/:userId", async (req, res) => {
 
 // Modificar la cantidad de productos en el carrito
 router.put("/update-cart/:userId/:productId", async (req, res) => {
-    const { userId, productId } = req.params;
-    const { quantity } = req.body;
-  
-    try {
-      const existingCart = await BuyOrder.findOne({ userId });
-  
-      if (!existingCart) {
-        return res.status(404).json({ message: "Carrito no encontrado." });
-      }
-  
-      const existingProduct = existingCart.products.find(
-        (item) => item.product.toString() === productId
-      );
-  
-      if (!existingProduct) {
-        return res.status(404).json({ message: "Producto no encontrado en el carrito." });
-      }
-  
-      const product = await Product.findById(productId);
-  
-      if (!product) {
-        return res.status(404).json({ message: "Producto no encontrado." });
-      }
-  
-      const originalQuantity = existingProduct.quantity;
-      const productPrice = product.price;
-  
-      // Restablece la cantidad del producto en la base de datos antes de modificar el carrito
-      product.count += originalQuantity;
-      product.count -= quantity;
-  
-      // Actualiza el producto en la base de datos
-      await product.save();
-  
-      // Actualiza la cantidad en el carrito
-      existingProduct.quantity = quantity;
-  
-      // Actualiza el total del carrito
-      existingCart.total += (quantity - originalQuantity) * productPrice;
-  
-      // Guarda los cambios en el carrito y devuelve la respuesta
-      const updatedCart = await existingCart.save();
-      res.json(updatedCart);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Hubo un error en el servidor." });
+  const { userId, productId } = req.params;
+  const { quantity } = req.body;
+
+  try {
+    const existingCart = await BuyOrder.findOne({ userId });
+
+    if (!existingCart) {
+      return res.status(404).json({ message: "Carrito no encontrado." });
     }
-  });
-  
+
+    const existingProduct = existingCart.products.find(
+      (item) => item.product.toString() === productId
+    );
+
+    if (!existingProduct) {
+      return res
+        .status(404)
+        .json({ message: "Producto no encontrado en el carrito." });
+    }
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado." });
+    }
+
+    const originalQuantity = existingProduct.quantity;
+    const productPrice = product.price;
+
+    // Restablece la cantidad del producto en la base de datos antes de modificar el carrito
+    product.count += originalQuantity;
+    product.count -= quantity;
+
+    // Actualiza el producto en la base de datos
+    await product.save();
+
+    // Actualiza la cantidad en el carrito
+    existingProduct.quantity = quantity;
+
+    // Actualiza el total del carrito
+    existingCart.total += (quantity - originalQuantity) * productPrice;
+
+    // Guarda los cambios en el carrito y devuelve la respuesta
+    const updatedCart = await existingCart.save();
+    res.json(updatedCart);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor." });
+  }
+});
+
 // Eliminar un producto del carrito
 router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
   const { userId, productId } = req.params;
@@ -144,7 +155,9 @@ router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
     );
 
     if (!existingProduct) {
-      return res.status(404).json({ message: "Producto no encontrado en el carrito." });
+      return res
+        .status(404)
+        .json({ message: "Producto no encontrado en el carrito." });
     }
 
     const product = await Product.findById(productId);
@@ -179,21 +192,28 @@ router.delete("/remove-from-cart/:userId/:productId", async (req, res) => {
   }
 });
 
-router.get("/success", async (req, res) => {
-  const { userId } = req.body;
+router.get("/success/:userId", async (req, res) => {
+  const { userId } = req.params;
   try {
-    // Obtén el usuario y su carrito actual
-    const user = await User.findById(userId);
-    const cart = await BuyOrder.findOne({ userId }).populate("products.product");
+    // Busca la orden de compra pendiente del usuario
+    const pendingCart = await BuyOrder.findOne({ userId, status: "pending" });
 
-    // Limpia los productos y resetea el carrito del usuario
-    // Esto dependerá de cómo estás manejando los carritos en tu lógica
-    // ...
+    if (!pendingCart) {
+      return res
+        .status(404)
+        .json({ message: "No se encontró ninguna orden de compra pendiente." });
+    }
 
-    res.send("Compra exitosa. Tu carrito ha sido reseteado.");
+    // Cambia el estado de la orden a "success"
+    pendingCart.status = "success";
+    await pendingCart.save();
+
+    res.send(
+      "Compra exitosa. Tu orden de compra ha sido actualizada a 'success'."
+    );
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error al mostrar el mensaje de exito." });
+    res.status(500).json({ message: "Error al mostrar el mensaje de éxito." });
   }
 });
 
@@ -202,17 +222,25 @@ router.post("/checkout", async (req, res) => {
   const { userId } = req.body;
 
   try {
-    const cart = await BuyOrder.findOne({ userId }).populate("products.product");
+    // Buscar el carrito pendiente del usuario
+    // const user = await User.findById(userId)
+    const cart = await BuyOrder.findOne({ userId, status: "pending" })
+      .populate("products.product")
+      .populate("products.title");
 
     if (!cart) {
-      return res.status(404).json({ message: "Carrito no encontrado." });
+      return res
+        .status(404)
+        .json({
+          message: "Carrito no encontrado o ya se realizó una compra exitosa.",
+        });
     }
 
     // Crear una lista de productos para la API de Stripe
     const lineItems = cart.products.map((item) => ({
       price_data: {
         currency: "usd",
-        unit_amount: Math.floor(item.product.price * 100 / 500), // Dividir por el valor del dolar
+        unit_amount: Math.floor((item.product.price * 100) / 500), // Dividir por el valor del dolar
         product_data: {
           name: item.product.title, // Nombre del producto
           description: item.product.description, // Descripción del producto
@@ -227,34 +255,34 @@ router.post("/checkout", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: "http://localhost:3002/order/success",
+      success_url: `http://localhost:3002/order/success/${userId}`,
       cancel_url: "http://localhost:3002/order/failure",
+      // customer_email: user.email,
     });
 
-    // Actualizar el estado del BuyOrder a "success"
-    cart.status = "success";
-    await cart.save();
+    let event;
 
-    // Agregar el BuyOrder exitoso al purchaseHistory del usuario
-    const user = await User.findById(userId);
-    user.purchaseHistory.push({
-      cart: cart._id,
-      products: cart.products.map((item) => ({
-        title: item.product.title, // Agrega el título del producto
-        product: item.product._id,
-        quantity: item.quantity,
-      })),
-      total: cart.total,
-      status: cart.status,
-      date: new Date(),
-    });
-    await user.save();
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+    }
 
-    // Limpia y resetea el carrito actual después del pago exitoso
-    cart.products = [];
-    cart.total = 0;
-    cart.status = "pending"; // Cambia el estado del carrito a "pending"
-    await cart.save();
+    res.json({ received: true });
+
+    // const emailContent = `
+    //   ¡Gracias por tu compra en nuestra tienda!
+    //   Detalles de la compra:
+    //   ${successCart.products.map(item => (
+    //     `${item.quantity} x ${item.title} `
+    //   )).join("\n")}
+    //   Total: $${successCart.total}
+    //   Fecha: ${successCart.date}
+
+    //   ¡Esperamos verte nuevamente pronto!
+    // `;
+
+    // const sendEmail = await postMailerOrder(user)
+
+    // console.log(sendEmail)
 
     const paymentLink = session.url;
     res.json({ sessionId: session.id, paymentLink: paymentLink });
@@ -264,7 +292,34 @@ router.post("/checkout", async (req, res) => {
   }
 });
 
+router.get("/all", async (req, res) => {
+  try {
+    const allBuyOrders = await BuyOrder.find();
+    res.json(allBuyOrders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor." });
+  }
+});
 
+// Obtener todas las órdenes de compra por userId
+router.get("/orders/user/:userId", async (req, res) => {
+  const { userId } = req.params;
 
+  try {
+    const orders = await BuyOrder.find({ userId }).populate("products.product");
+
+    if (orders.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No se encontraron ordenes con el id proporcionado" });
+    }
+
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor" });
+  }
+});
 
 module.exports = router;

@@ -1,19 +1,16 @@
 const mongoose = require("mongoose");
 
 const userSchema = mongoose.Schema({
-  UID: {
-    type: String,
-    // type: mongoose.Types.ObjectId,
-    // ref: "User",
-    default: ""
-  },
+  // UID: {
+  //   type: String
+  // },
   name: {
     type: String,
     required: true,
   },
   phone: {
     type: String,
-    required: true,
+    // required: true,
   },
   email: {
     type: String,
@@ -31,6 +28,11 @@ const userSchema = mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true,
+  },
+  rating: {
+    type: Array,
+    required: false,
+    default:0
   },
   purchaseHistory: [
     {
