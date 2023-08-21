@@ -10,6 +10,7 @@ const uri = process.env.MONGODB_URI;
 const productRoutes = require("./routes/product");
 const userRoutes = require("./routes/user");
 const buyOrderRoutes = require("./routes/buyOrder");
+const ratingRoutes = require("./routes/rating");
 
 // Configuración de express-session
 app.use(
@@ -33,6 +34,7 @@ app.use(cors({ origin: "http://localhost:5173" }));
 app.use("/", userRoutes);
 app.use("/products", productRoutes);
 app.use("/order", buyOrderRoutes);
+app.use("/rating", ratingRoutes);
 
 //app.use("/orders", buyOrderRouter);
 
