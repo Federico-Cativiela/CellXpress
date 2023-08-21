@@ -107,7 +107,9 @@ router.get("/orders/user/:userId", async (req, res) => {
     const orders = await BuyOrder.find({ userId }).populate("products.product");
 
     if (orders.length === 0) {
-      return res.status(404).json({ message: "No se encontraron ordenes con el id proporcionado" });
+      return res
+        .status(404)
+        .json({ message: "No se encontraron ordenes con el id proporcionado" });
     }
 
     res.json(orders);
@@ -122,10 +124,15 @@ router.get("/pendingOrders/user/:userId", async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const orders = await BuyOrder.find({ userId, status: "pending" }).populate("products.product");
+    const orders = await BuyOrder.find({ userId, status: "pending" }).populate(
+      "products.product"
+    );
 
     if (orders.length === 0) {
-      return res.status(404).json({ message: "No se encontraron órdenes pendientes para el ID proporcionado" });
+      return res.status(404).json({
+        message:
+          "No se encontraron órdenes pendientes para el ID proporcionado",
+      });
     }
 
     res.json(orders);
@@ -140,10 +147,14 @@ router.get("/successOrders/user/:userId", async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const orders = await BuyOrder.find({ userId, status: "success" }).populate("products.product");
+    const orders = await BuyOrder.find({ userId, status: "success" }).populate(
+      "products.product"
+    );
 
     if (orders.length === 0) {
-      return res.status(404).json({ message: "No se encontraron órdenes exitosas para el ID proporcionado" });
+      return res.status(404).json({
+        message: "No se encontraron órdenes exitosas para el ID proporcionado",
+      });
     }
 
     res.json(orders);
@@ -153,14 +164,12 @@ router.get("/successOrders/user/:userId", async (req, res) => {
   }
 });
 
-
-// Modificar la cantidad de productos en el carrito
 router.put("/update-cart/:userId/:productId", async (req, res) => {
   const { userId, productId } = req.params;
   const { quantity } = req.body;
 
   try {
-    const existingCart = await BuyOrder.findOne({ userId });
+    const existingCart = await BuyOrder.findOne({ userId, status: "pending" });
 
     if (!existingCart) {
       return res.status(404).json({ message: "Carrito no encontrado." });
@@ -225,7 +234,7 @@ router.delete("/remove-from-cart/:orderId/:productId", async (req, res) => {
     if (!existingProduct) {
       return res
         .status(404)
-        .json({ message: "Producto no encontrado en el carrito." });
+        .json({ message: "Producto no encontrado en la orden." });
     }
 
     const product = await Product.findById(productId);
@@ -298,16 +307,17 @@ router.delete("/empty-cart/:userId", async (req, res) => {
   }
 });
 
+module.exports = router;
+
 // Ruta para realizar el pago
 router.post("/checkout", async (req, res) => {
-  const { userId } = req.query;
-
+  const { userId } = req.body;
   try {
     // Buscar el carrito pendiente del usuario
     const cart = await BuyOrder.findOne({ userId, status: "pending" }).populate(
       "products.product"
     );
-    // const user = await User.findById(userId);
+    const user = await User.findById(userId);
     if (!cart) {
       return res.status(404).json({
         message: "Carrito no encontrado o ya se realizó una compra exitosa.",
@@ -335,7 +345,7 @@ router.post("/checkout", async (req, res) => {
       mode: "payment",
       success_url: `http://localhost:3002/order/success/${cart._id}`, // Cambio aquí
       cancel_url: "http://localhost:3002/order/failure",
-      // customer_email: user.email,
+      customer_email: user.email,
     });
 
     const paymentLink = session.url;
@@ -376,7 +386,6 @@ router.get("/success/:buyOrderId", async (req, res) => {
     const currentDate = new Date();
     const options = { year: "numeric", month: "long", day: "numeric" };
     const formattedDate = currentDate.toLocaleDateString("es-ES", options);
-
     // Envía un correo electrónico de confirmación de compra
     const emailContent = `
 <html>
@@ -458,26 +467,6 @@ router.get("/all", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Hubo un error en el servidor." });
-  }
-});
-
-// Obtener todas las órdenes de compra por userId
-router.get("/orders/user/:userId", async (req, res) => {
-  const { userId } = req.params;
-
-  try {
-    const orders = await BuyOrder.find({ userId }).populate("products.product");
-
-    if (orders.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No se encontraron ordenes con el id proporcionado" });
-    }
-
-    res.json(orders);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Hubo un error en el servidor" });
   }
 });
 
