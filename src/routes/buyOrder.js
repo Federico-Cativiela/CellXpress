@@ -150,56 +150,56 @@ router.get("/successOrders/user/:userId", async (req, res) => {
 });
 
 
-// Modificar la cantidad de productos en el carrito
 router.put("/update-cart/:userId/:productId", async (req, res) => {
-    const { userId, productId } = req.params;
-    const { quantity } = req.body;
-  
-    try {
-      const existingCart = await BuyOrder.findOne({ userId });
-  
-      if (!existingCart) {
-        return res.status(404).json({ message: "Carrito no encontrado." });
-      }
-  
-      const existingProduct = existingCart.products.find(
-        (item) => item.product.toString() === productId
-      );
-  
-      if (!existingProduct) {
-        return res.status(404).json({ message: "Producto no encontrado en el carrito." });
-      }
-  
-      const product = await Product.findById(productId);
-  
-      if (!product) {
-        return res.status(404).json({ message: "Producto no encontrado." });
-      }
-  
-      const originalQuantity = existingProduct.quantity;
-      const productPrice = product.price;
-  
-      // Restablece la cantidad del producto en la base de datos antes de modificar el carrito
-      product.count += originalQuantity;
-      product.count -= quantity;
-  
-      // Actualiza el producto en la base de datos
-      await product.save();
-  
-      // Actualiza la cantidad en el carrito
-      existingProduct.quantity = quantity;
-  
-      // Actualiza el total del carrito
-      existingCart.total += (quantity - originalQuantity) * productPrice;
-  
-      // Guarda los cambios en el carrito y devuelve la respuesta
-      const updatedCart = await existingCart.save();
-      res.json(updatedCart);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Hubo un error en el servidor." });
+  const { userId, productId } = req.params;
+  const { quantity } = req.body;
+
+  try {
+    const existingCart = await BuyOrder.findOne({ userId, status: "pending" });
+
+    if (!existingCart) {
+      return res.status(404).json({ message: "Carrito no encontrado." });
     }
-  });
+
+    const existingProduct = existingCart.products.find(
+      (item) => item.product.toString() === productId
+    );
+
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Producto no encontrado en el carrito." });
+    }
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado." });
+    }
+
+    const originalQuantity = existingProduct.quantity;
+    const productPrice = product.price;
+
+    // Restablece la cantidad del producto en la base de datos antes de modificar el carrito
+    product.count += originalQuantity;
+    product.count -= quantity;
+
+    // Actualiza el producto en la base de datos
+    await product.save();
+
+    // Actualiza la cantidad en el carrito
+    existingProduct.quantity = quantity;
+
+    // Actualiza el total del carrito
+    existingCart.total += (quantity - originalQuantity) * productPrice;
+
+    // Guarda los cambios en el carrito y devuelve la respuesta
+    const updatedCart = await existingCart.save();
+    res.json(updatedCart);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor." });
+  }
+});
+
   
 // Eliminar un producto del carrito
 router.delete("/remove-from-cart/:orderId/:productId", async (req, res) => {
