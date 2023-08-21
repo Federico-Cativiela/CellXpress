@@ -380,8 +380,6 @@ router.get("/success/:buyOrderId", async (req, res) => {
     // Obtén los detalles del usuario
     const user = await User.findById(cart.userId);
 
-    cart === [];
-
     // Obtén la fecha actual en el formato deseado (por ejemplo, "15 de agosto de 2023")
     const currentDate = new Date();
     const options = { year: "numeric", month: "long", day: "numeric" };
@@ -455,6 +453,9 @@ router.get("/success/:buyOrderId", async (req, res) => {
     res.send(
       "Compra exitosa. Tu orden de compra ha sido actualizada a 'success'."
     );
+    if (cart.status === "success") {
+      cart === [];
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error al mostrar el mensaje de éxito." });
