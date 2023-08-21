@@ -10,8 +10,8 @@ const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
   service: "gmail", // Puedes usar un servicio de correo como Gmail o configurar tu propio servidor SMTP
   auth: {
-    user: process.env.NODE_EMAIL, // Cambia esto al correo desde el que deseas enviar los correos
-    pass: process.env.NODE_EMAIL_PASS, // Cambia esto a tu contraseña
+    user: "infocxps@gmail.com", // Cambia esto al correo desde el que deseas enviar los correos
+    pass: "lepbzffdfisdhhkc", // Cambia esto a tu contraseña
   },
 });
 
@@ -104,6 +104,42 @@ router.get("/orders/user/:userId", async (req, res) => {
 
     if (orders.length === 0) {
       return res.status(404).json({ message: "No se encontraron ordenes con el id proporcionado" });
+    }
+
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor" });
+  }
+});
+
+//Obtener orden pendiente por medio de userId
+router.get("/pendingOrders/user/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const orders = await BuyOrder.find({ userId, status: "pending" }).populate("products.product");
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: "No se encontraron órdenes pendientes para el ID proporcionado" });
+    }
+
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hubo un error en el servidor" });
+  }
+});
+
+//Obtener orden pendiente por medio de userId
+router.get("/successOrders/user/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const orders = await BuyOrder.find({ userId, status: "success" }).populate("products.product");
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: "No se encontraron órdenes exitosas para el ID proporcionado" });
     }
 
     res.json(orders);
@@ -376,7 +412,7 @@ const emailContent = `
 `;
 
     const mailOptions = {
-      from: process.env.NODE_EMAIL, // Cambia esto al correo desde el que deseas enviar el correo
+      from: "infocxps@gmail.com", // Cambia esto al correo desde el que deseas enviar el correo
       to: user.email, // El correo del usuario
       subject: "Confirmación de compra",
       html: emailContent,
