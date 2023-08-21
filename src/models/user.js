@@ -29,11 +29,6 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  rating: {
-    type: Array,
-    required: false,
-    default:0
-  },
   purchaseHistory: [
     {
       cart: {

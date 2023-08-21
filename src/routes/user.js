@@ -42,9 +42,7 @@ router.post("/", async (req, res) => {
       phone,
       email,
       password,
-      rating,
     });
-    
 
     const sendEmail = await postMailerRegister(newUser)
 
