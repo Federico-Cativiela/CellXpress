@@ -30,8 +30,8 @@ const buyOrderSchema = mongoose.Schema({
   status: {
     type: String,
     enum: ["pending", "success", "canceled"],
-    default: "pending"
-  }
+    default: "pending",
+  },
 });
 
 module.exports = mongoose.model("BuyOrder", buyOrderSchema);
