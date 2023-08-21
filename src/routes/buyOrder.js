@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
 
 // Agregar un producto al carrito
 router.post("/add-to-cart", async (req, res) => {
-  const { userId, productId, quantity } = req.body;
+  const { userId, productId, quantity, title } = req.body;
 
   try {
     // Busca el producto en la base de datos para obtener su precio y cantidad disponible
@@ -67,6 +67,7 @@ router.post("/add-to-cart", async (req, res) => {
         userId,
         products: [{ product: productId, quantity }],
         total: quantity * productPrice,
+        title: title,
       });
 
       const savedCart = await newCart.save();
@@ -289,6 +290,9 @@ router.delete("/empty-cart/:userId", async (req, res) => {
       }
     }
 
+    res.send(
+      "Compra exitosa. Tu orden de compra ha sido actualizada a 'success'."
+    );
     // Vacía el carrito de productos
     existingCart.products = [];
     existingCart.total = 0;
@@ -296,7 +300,7 @@ router.delete("/empty-cart/:userId", async (req, res) => {
     // Guarda los cambios en el carrito
     await existingCart.save();
 
-    res.json({ message: "Carrito vaciado exitosamente." });
+    // res.json({ message: "Carrito vaciado exitosamente." });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Hubo un error en el servidor." });
@@ -382,7 +386,6 @@ router.get("/success/:buyOrderId", async (req, res) => {
     const currentDate = new Date();
     const options = { year: "numeric", month: "long", day: "numeric" };
     const formattedDate = currentDate.toLocaleDateString("es-ES", options);
-
     // Envía un correo electrónico de confirmación de compra
     const emailContent = `
 <html>
