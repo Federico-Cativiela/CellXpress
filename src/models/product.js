@@ -21,8 +21,31 @@ const productSchema = mongoose.Schema({
     type: String,
     required: true,
   },
-  rating: {
-    type: Array,
+
+  rating: [
+    {
+      review: {
+          nickname:{
+             type: String,
+             required: true},
+          comment:{
+             type: String,
+             required: false},
+          num:{
+              type: Number,
+              required: true}
+      },
+      
+    },
+  ],
+  rate: {
+    type: Number,
+    default:0,
+    required: false,
+  },
+  reviewers: {
+    type: Number,
+    default: 0,
     required: false,
   },
   //isDeactivated,ScreenSize,CameraInches,Ram
