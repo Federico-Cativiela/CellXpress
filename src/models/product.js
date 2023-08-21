@@ -35,19 +35,19 @@ const productSchema = mongoose.Schema({
               type: Number,
               required: true}
       },
-      rate: {
-        type: Number,
-        default:0,
-        required: false,
-      },
-      reviewers: {
-        type: Number,
-        default: 0,
-        required: false,
-      }
+      
     },
   ],
- 
+  rate: {
+    type: Number,
+    default:0,
+    required: false,
+  },
+  reviewers: {
+    type: Number,
+    default: 0,
+    required: false,
+  },
   //isDeactivated,ScreenSize,CameraInches,Ram
   screenSize: {
     type: String,
