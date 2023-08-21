@@ -1,9 +1,7 @@
  const express = require("express");
  const router = express.Router();
- const ratingSchema = require("../models/rating")
- const BuyOrder = require("../models/buyOrder");
  const Product = require("../models/product");
-const User = require("../models/user");
+ const User = require("../models/user");
 
 //Ruta para obtener todos los rating
 router.get("/", (req,res)=>{
@@ -14,16 +12,14 @@ router.get("/", (req,res)=>{
   })
 
 router.post("/", async (req, res) => {
-  const { userId, productId,buyOrderId,qualify, comment } = req.body;
+  const { userId, products,qualify} = req.body;
   try {
 
-    // Si el correo electrónico no existe, crea el nuevo usuario
+    // creacion del nuevo rating
     const newRating = new ratingSchema({
       userId,
-      productId,
-      buyOrderId,
+      products,
       qualify,
-      comment
     });
       const ratingSave = await newRating.save()
       res.status(201).json(ratingSave);
