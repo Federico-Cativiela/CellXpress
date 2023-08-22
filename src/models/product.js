@@ -27,13 +27,13 @@ const productSchema = mongoose.Schema({
       review: {
           nickname:{
              type: String,
-             required: true},
+             required: false},
           comment:{
              type: String,
              required: false},
           num:{
               type: Number,
-              required: true}
+              required: false}
       },
       
     },
