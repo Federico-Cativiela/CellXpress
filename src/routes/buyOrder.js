@@ -343,8 +343,8 @@ router.post("/checkout", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `https://pf-cell-xpress-frontend.vercel.app/order/success/${cart._id}`, // Cambio aquí
-      cancel_url: "https://pf-cell-xpress-frontend.vercel.app/order/failure",
+      success_url: `http://localhost:3002/order/success/${cart._id}`, // Cambio aquí
+      cancel_url: "http://localhost:3002/order/failure",
       customer_email: user.email,
     });
 
