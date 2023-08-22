@@ -346,7 +346,7 @@ router.post("/checkout", async (req, res) => {
       mode: "payment",
       success_url: `https://cellxpress.onrender.com/order/success/${cart._id}`, // Cambio aquí
       cancel_url: "https://cellxpress.onrender.com/order/failure",
-      // customer_email: user.email,
+      customer_email: user.email,
     });
 
     const paymentLink = session.url;
@@ -453,7 +453,59 @@ router.get("/success/:buyOrderId", async (req, res) => {
     await transporter.sendMail(mailOptions);
 
     res.send(
-      "Compra exitosa. Tu orden de compra ha sido actualizada a 'success'."
+      `<html>
+      <head>
+        <style>
+          body {
+            background-color: #cfcfcf;
+            color: #333;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+          }
+          h1 {
+            color: #e57373;
+          }
+          ul {
+            list-style: none;
+            padding: 0;
+          }
+          li {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+          }
+          img {
+            max-width: 200px;
+            height: auto;
+          }
+        </style>
+      </head>
+        <body>
+          <h1>¡Gracias por tu compra en nuestra tienda!</h1>
+          <a href="https://pf-cell-xpress-frontend.vercel.app/home">volver al home!!</a>
+          <h2>Detalles de la compra:</h2>
+          <ul>
+            ${cart.products
+              .map(
+                (item) =>
+                  `<li>
+                ${item.quantity} x ${item.product.title} - Total: $${(
+                    item.product.price * item.quantity
+                  ).toFixed(2)}<br>
+                <img src="${item.product.image}" alt="Imagen del producto"><br>
+                ${item.product.description}
+              </li>`
+              )
+              .join("")}
+          </ul>
+          <p>Fecha: ${formattedDate}</p>
+          <p>¡Esperamos verte nuevamente pronto!</p>
+        </body>
+        </html>
+      `
     );
   } catch (error) {
     console.error(error);
