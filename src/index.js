@@ -28,7 +28,7 @@ app.use(cors({}));
 //routes
 app.use("/", userRoutes);
 app.use("/products", productRoutes);
-app.use("https://pf-cell-xpress-frontend.vercel.app/order", buyOrderRoutes);
+app.use("/order", buyOrderRoutes);
 app.use("/rating", ratingRoutes);
 
 //app.use("/orders", buyOrderRouter);
