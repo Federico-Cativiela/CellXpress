@@ -1,27 +1,50 @@
 const express = require("express")
 const product = require("../models/product")
-
+const user = require("../models/user")
 const router = express.Router()
 
 // Ruta para obtener todos los productos
 router.get("/", (req, res) => {
-    product
-      .find()
-      .then((data) => res.json(data))
-      .catch((error) => res.json({ message: error }));
-  });
-  
-  // Ruta para buscar productos por nombre
-  router.get("/search", (req, res) => {
+  product
+  .find()
+  .then((data) => res.json(data))
+  .catch((error) => res.json({ message: error }));
+});
+
+// Ruta para buscar productos por nombre
+router.get("/search", (req, res) => {
     const keyword = req.query.keyword;
-  
+    
     product
-      .find({ $text: { $search: keyword } })
-      .then((filteredProducts) => res.json({ products: filteredProducts }))
-      .catch((error) => res.status(400).json({ error: "Error al obtener los productos" }));
+    .find({ $text: { $search: keyword } })
+    .then((filteredProducts) => res.json({ products: filteredProducts }))
+    .catch((error) => res.status(400).json({ error: "Error al obtener los productos" }));
   });
   
+  //Ruta para obtener todas las reviews realizadas por un usuario
+  router.get("/reviews-by-user/:userId", (req, res) => {
+    const userId = req.params.userId;
   
+    product
+      .find({ "rating.review.nickname": userId }) // Buscar productos con reseñas del usuario especificado
+      .then((products) => {
+        const userReviews = [];
+        products.forEach((product) => {
+          product.rating.forEach((review) => {
+            if (review.review.nickname === userId) {
+              userReviews.push({
+                productId: product._id,
+                comment: review.review.comment,
+                num: review.review.num
+              });
+            }
+          });
+        });
+  
+        res.json({ userReviews });
+      })
+      .catch((error) => res.status(500).json({ error: `Error al obtener las reseñas del usuario con ID ${userId}` }));
+  });
   
   // Ruta para obtener productos por atributos y marca
   router.get("/filter", (req, res) => {
@@ -161,4 +184,42 @@ router.delete("/:id", (req, res) => {
 });
 
 
-module.exports = router;
+// Ruta para obtener las reseñas de un producto por su ID
+router.get("/:id/reviews", (req, res) => {
+  const productId = req.params.id;
+
+  product
+    .findById(productId)
+    .populate("rating")  // Esto asume que el esquema de producto tiene un campo "reviews" que hace referencia a las reseñas
+    .then((product) => {
+      if (!product) {
+        return res.status(404).json({ error: "Producto no encontrado" });
+      }
+      // Aquí puedes extraer las reseñas del producto y enviarlas como respuesta
+      const reviews = product.rating;
+      res.json({ reviews });
+    })
+    .catch((error) => res.status(500).json({ error: `Error al obtener las reseñas del producto con ID ${productId}` }));
+});
+
+
+// Ruta para obtener las estrellas de un producto por su ID
+router.get("/:id/rate", (req, res) => {
+  const productId = req.params.id;
+
+  product
+    .findById(productId)
+    .populate("rate")  // Esto asume que el esquema de producto tiene un campo "reviews" que hace referencia a las reseñas
+    .then((product) => {
+      if (!product) {
+        return res.status(404).json({ error: "Producto no encontrado" });
+      }
+      // Aquí puedes extraer las reseñas del producto y enviarlas como respuesta
+      const rate = product.rate;
+      res.json({ rate });
+    })
+    .catch((error) => res.status(500).json({ error: `Error al obtener las estrellas del producto con ID ${productId}` }));
+  });
+  
+  
+  module.exports = router;
