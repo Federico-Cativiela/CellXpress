@@ -344,7 +344,7 @@ router.post("/checkout", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `https://cellxpress.onrender.com/order/success/${cart._id}`, // Cambio aquí
+      success_url: `http://localhost:3002/order/success/${cart._id}`, // Cambio aquí
       cancel_url: "https://cellxpress.onrender.com/order/failure",
       customer_email: user.email,
     });
@@ -457,33 +457,67 @@ router.get("/success/:buyOrderId", async (req, res) => {
       <head>
         <style>
           body {
-            background-color: #cfcfcf;
+            background-color: #1f6e8c;
             color: #333;
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
           }
           h1 {
-            color: #e57373;
+            color: #0E2954;
+            margin-top: 50px;
+            margin-bottom: 30px;
+            font-size: 40px;
           }
           ul {
             list-style: none;
             padding: 0;
+            margin-top: 60px;
           }
           li {
-            background-color: #fff;
-            border: 1px solid #ddd;
+            background-color: #1f6e8c;
             border-radius: 5px;
             padding: 10px;
             margin: 10px 0;
+            color: white;
+            font-size: 23px;
+          }
+          p{
+            color: white;
+            font-size: 20px;
           }
           img {
-            max-width: 200px;
+            max-width: 300px;
             height: auto;
           }
+          a{
+            text-decoration: none;
+            list-style: none;
+            color: black;
+            cursor: pointer;
+            width: 150px;
+            height: 100px;
+            font-size: 23px;
+            background-color: #84A7A1;
+            border-radius: 5px;
+            border: none;
+            padding: 10px;
+          }
+          #logoimg{
+            width: 150px;
+            height: 150px;
+            margin: 20px;
+            left: 15px;
+            position: absolute;
+            display: flex;
+            align-items: start;
+            justify-content: start;
+            border-radius: 100%;
+        }
         </style>
       </head>
         <body>
+        <img id="logoimg" src="https://res.cloudinary.com/djqwbu0my/image/upload/w_1000,c_fill,ar_1:1,g_auto,r_max,bo_5px_solid_red,b_rgb:262c35/v1691088616/OIP_mzc6jr.jpg" alt="" />
           <h1>¡Gracias por tu compra en nuestra tienda!</h1>
           <a href="https://pf-cell-xpress-frontend.vercel.app/home">volver al home!!</a>
           <h2>Detalles de la compra:</h2>
