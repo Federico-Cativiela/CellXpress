@@ -11,7 +11,16 @@ router.post("/reviews/:productId", async (req, res) => {
     const product = await Product.findById(productId);
 
     if (!product) {
-      return res.status(404).json({ error: `Producto con el id ${productId} no encontrado` });
+      return res.status(404).json({ error: `Producto con el id ${productId} no encontrado `});
+    }
+
+    // Verificar si ya existe una review con el mismo nickname para este producto
+    const existe = product.rating.find(
+      (review) => review.review.nickname === nickname
+    );
+
+    if (existe) {
+      return res.status(400).json({ error: "Ya has dejado una reseña para este producto con este nickname." });
     }
 
     // Calcular rate y reviewers en función de las revisiones previas
