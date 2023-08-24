@@ -344,7 +344,7 @@ router.post("/checkout", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `http://localhost:3002/order/success/${cart._id}`, // Cambio aquí
+      success_url: `https://cellxpress.onrender.com/order/success/${cart._id}`, // Cambio aquí
       cancel_url: "https://cellxpress.onrender.com/order/failure",
       customer_email: user.email,
     });
