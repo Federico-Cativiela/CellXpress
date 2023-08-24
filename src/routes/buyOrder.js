@@ -519,7 +519,7 @@ router.get("/success/:buyOrderId", async (req, res) => {
         <body>
         <img id="logoimg" src="https://res.cloudinary.com/djqwbu0my/image/upload/w_1000,c_fill,ar_1:1,g_auto,r_max,bo_5px_solid_red,b_rgb:262c35/v1691088616/OIP_mzc6jr.jpg" alt="" />
           <h1>¡Gracias por tu compra en nuestra tienda!</h1>
-          <a href="https://pf-cell-xpress-frontend.vercel.app/home">volver al home!!</a>
+          <a href="https://pf-cell-xpress-frontend.vercel.app/home">Volver al home!!</a>
           <h2>Detalles de la compra:</h2>
           <ul>
             ${cart.products
